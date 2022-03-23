@@ -1,2 +1,2 @@
 # rust-cursive-mongo-petsclinic
-Rust + Mongo practice with Cursive
+Rust + Mongo with Cursive TUI to practice :)
