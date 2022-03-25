@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "petsclinic-lib",
+    "petsclinic-tui",
+]
