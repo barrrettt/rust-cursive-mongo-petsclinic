@@ -1,3 +1,6 @@
+use petsclinic_lib as pets;
+
 fn main() {
-    println!("Hello, world!");
+    println!("Run...");
+    println!("Use library {}",pets::add_one(5));
 }
