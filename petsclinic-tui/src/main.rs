@@ -2,5 +2,8 @@ use petsclinic_lib as pets;
 
 fn main() {
     println!("Run...");
-    println!("Use library {}",pets::add_one(5));
+    match pets::connect(){
+        Ok(_)=>print!("OK"),
+        Err(e)=>print!("Error {}",e),
+    };
 }
