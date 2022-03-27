@@ -1,9 +1,18 @@
-use petsclinic_lib as pets;
+use petsclinic_lib as lib;
 
 fn main() {
     println!("Run...");
-    match pets::connect(){
-        Ok(_)=>print!("OK"),
-        Err(e)=>print!("Error {}",e),
+    let db = match lib::connect(){
+        Ok(db)=>{
+            println!("OK");
+            db
+        }
+        Err(e)=>{
+            println!("Error {}",e);
+            return;
+        },
     };
+
+    let _result = lib::find_customers(&db, "");
+    
 }
