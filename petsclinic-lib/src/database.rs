@@ -1,7 +1,7 @@
-use bson::Document;
+use bson::{Document, doc, Bson};
 use chrono::Utc;
 use mongodb::{
-    options::{ResolverConfig, ClientOptions}, 
+    options::{ResolverConfig, ClientOptions,}, 
     Client
 };
 use crate::datamodels::{
@@ -10,8 +10,7 @@ use crate::datamodels::{
 };
 
 //default url mongo
-const DEFAULT_URL:&str  = "mongodb://admin:admin@localhost:27017";
-
+const DEFAULT_URL:&str = "mongodb://admin:admin@localhost:27017";
 //collections names
 const DATABASE_NAME:&str = "pet_clinic";
 const COLLECTION_CUSTOMER:&str = "customers";
@@ -24,7 +23,7 @@ pub struct DB {
 }
 
 impl DB {
-    //Instancing..
+    //Instancing...
     pub async fn new() -> Result<Self,Box<dyn std::error::Error>> {
         let client_uri = DEFAULT_URL;
         let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare()).await?;
@@ -56,8 +55,8 @@ impl DB {
         db_pet_clinic_exists
     }
 
-    //new data
-    pub async fn create_db(&self){
+    //new Database with mocks
+    pub async fn create_db_mocks(&self){
         let owner = self.add_customer_with_name("Javier Fernández Barreiro").await;
         let owner = owner.unwrap();
         self.add_pet_by_name_and_owner("Lua",&owner).await;
@@ -136,6 +135,30 @@ impl DB {
                 },
             };
         }
+        None
+    }
+
+    //CRUD: customers
+    pub async fn find_like_name(&self, name:&str) -> Option<Customer> {
+        //get collection
+        let db = self.client.database(DATABASE_NAME);
+        let customers = db.collection::<Document>(COLLECTION_CUSTOMER);
+
+        // Query the customers in the collection with a filter to find with like.
+        let regex = bson::Regex{pattern:name.to_owned(), options:"".to_owned()};
+        //println!("query: {}",regex);
+        let filter = doc! {"name":regex};
+        let options = None;
+
+        if let Ok(some) = customers.find_one(filter, options).await {
+
+            if let Some(d) = some{
+                //deserialize
+                if let Ok(c) = bson::from_bson(Bson::Document(d)) {
+                    return Some(c)
+                }
+            }
+        };
         None
     }
 

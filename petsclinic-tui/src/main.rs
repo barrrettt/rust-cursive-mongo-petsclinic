@@ -2,7 +2,7 @@ use petsclinic_lib as lib;
 
 fn main() {
     println!("Run...");
-    let db = match lib::connect(){
+    let db = match lib::DataBase::connect(){
         Ok(db)=>{
             println!("OK");
             db
@@ -13,6 +13,6 @@ fn main() {
         },
     };
 
-    let _result = lib::find_customers(&db, "");
-    
+    let result = db.find_customers("Javier");
+    println!("result {:?}",result);
 }
