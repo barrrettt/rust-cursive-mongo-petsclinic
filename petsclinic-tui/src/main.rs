@@ -1,11 +1,10 @@
 use petsclinic_lib as lib;
 
 fn main() {
-    println!("Run...");
-    let db = match lib::DataBase::connect(){
-        Ok(db)=>{
-            println!("OK");
-            db
+    println!("Running...");
+    let database = match lib::DataBase::connect(){
+        Ok(data)=>{
+            data.unwrap()
         }
         Err(e)=>{
             println!("Error {}",e);
@@ -13,6 +12,9 @@ fn main() {
         },
     };
 
-    let result = db.find_customers("Javier");
-    println!("result {:?}",result);
+    //find by name
+    let result = database.find_like_name("Javier");
+    println!("result {:?}",result.expect("Error"));
+
+    //add 
 }
