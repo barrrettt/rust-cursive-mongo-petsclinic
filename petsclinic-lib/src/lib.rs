@@ -35,7 +35,7 @@ impl DataBase{
     }
     
     //PUBLIC FUNCTIONS
-    pub fn find_customers(&self, query:&str) -> Option<Customer>{
+    pub fn find_customers(&self, query:&str) -> Option<Vec<Customer>>{
         let result = self.runtime.block_on(async {
             let result = self.db.find_like_name(query).await;
             result

@@ -1,5 +1,6 @@
-use bson::{Document, doc, Bson};
+use bson::{Document, doc, Bson, oid::ObjectId, from_document};
 use chrono::Utc;
+use futures::TryStreamExt;
 use mongodb::{
     options::{ResolverConfig, ClientOptions,}, 
     Client
@@ -58,7 +59,10 @@ impl DB {
     //new Database with mocks
     pub async fn create_db_mocks(&self){
         let owner = self.add_customer_with_name("Javier Fernández Barreiro").await;
-        let owner = owner.unwrap();
+        let owner = match owner{
+            Some(o) => o,
+            None => return,
+        };
         self.add_pet_by_name_and_owner("Lua",&owner).await;
         self.add_pet_by_name_and_owner("Jazz",&owner).await;
         self.add_pet_by_name_and_owner("Ned",&owner).await;
@@ -139,19 +143,44 @@ impl DB {
     }
 
     //CRUD: customers
-    pub async fn find_like_name(&self, name:&str) -> Option<Customer> {
+    pub async fn find_like_name(&self, name:&str) -> Option<Vec<Customer>> {
         //get collection
         let db = self.client.database(DATABASE_NAME);
         let customers = db.collection::<Document>(COLLECTION_CUSTOMER);
 
         // Query the customers in the collection with a filter to find with like.
         let regex = bson::Regex{pattern:name.to_owned(), options:"".to_owned()};
-        //println!("query: {}",regex);
         let filter = doc! {"name":regex};
         let options = None;
+        
+        //execute query
+        if let Result::Ok(mut cursor) = customers.find(filter, options).await{
 
+            let mut customers: Vec<Customer> = Vec::new();
+
+            while let Result::Ok(Some(doc)) = cursor.try_next().await{
+                if let Result::Ok(customer) = from_document(doc){
+                    //println!("Doc {:?}",customer);
+                    customers.push(customer)
+                }
+            }
+            return Some(customers);//results
+        }
+        //bad finally
+        None
+    }
+
+    // CRUD customer 
+    pub async fn find_customer_by_id(&self, id:&ObjectId) -> Option<Customer> {
+        //get collection
+        let db = self.client.database(DATABASE_NAME);
+        let customers = db.collection::<Document>(COLLECTION_CUSTOMER);
+
+        // Query the customers in the collection with a filter to find with like.
+        let filter = doc! {"_id":id};
+        let options = None;
+        //execute query
         if let Ok(some) = customers.find_one(filter, options).await {
-
             if let Some(d) = some{
                 //deserialize
                 if let Ok(c) = bson::from_bson(Bson::Document(d)) {
