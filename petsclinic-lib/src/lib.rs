@@ -1,4 +1,5 @@
 mod datamodels;
+mod util;
 use tokio;
 use bson::{Document, doc, Bson, oid::ObjectId, from_document};
 use chrono::Utc;
@@ -51,7 +52,7 @@ impl DataBase{
                     let exist = database.ckeck_databases().await;
                     if !exist {
                         println!("New database...");
-                        database.create_db_mocks().await;
+                        database.create_db_mocks();
                     }
                 });
                 return Ok(Some(database));
@@ -84,21 +85,42 @@ impl DataBase{
     }
 
     //new Database with mocks
-    async fn create_db_mocks(&self){
-        let owner = self.add_customer_with_name("Javier Fernández Barreiro").await;
-        let owner = match owner{
-            Some(o) => o,
-            None => return,
-        };
-        self.add_pet_by_name_and_owner("Lua",&owner).await;
-        self.add_pet_by_name_and_owner("Jazz",&owner).await;
-        self.add_pet_by_name_and_owner("Ned",&owner).await;
+    pub fn create_db_mocks(&self){
+        self.runtime.block_on(async {
+            let owner = self.add_customer_with_name("Javier Fernández Barreiro").await;
+            let owner = match owner{
+                Some(o) => o,
+                None => return,
+            };
+            self.add_pet_by_name_and_owner("Lua",&owner).await;
+            self.add_pet_by_name_and_owner("Jazz",&owner).await;
+            self.add_pet_by_name_and_owner("Ned",&owner).await;
 
-        let owner = self.add_customer_with_name("Isiña Garcia Novais").await;
-        let owner = owner.unwrap();
-        self.add_pet_by_name_and_owner("Xena",&owner).await;
-        self.add_pet_by_name_and_owner("Mut",&owner).await;
-        self.add_pet_by_name_and_owner("Vlad",&owner).await;
+            let owner = self.add_customer_with_name("Isiña Garcia Novais").await;
+            let owner = owner.unwrap();
+            self.add_pet_by_name_and_owner("Xena",&owner).await;
+            self.add_pet_by_name_and_owner("Mut",&owner).await;
+            self.add_pet_by_name_and_owner("Vlad",&owner).await;
+
+            //10000 customers and randomn pets (1-2)
+            for _i in 0..10000 {
+                let name = util::get_random_personame();
+                if let Some(ow) = self.add_customer_with_name(name).await{
+                    self.add_pet_by_name_and_owner(util::get_random_personame(),&ow).await;
+                    self.add_pet_by_name_and_owner(util::get_random_personame(),&ow).await;
+                }
+            }
+        });
+    }
+
+    //delete db
+    pub fn delete_database(&self) {
+        self.runtime.block_on(async {
+            //get collection
+            let db = self.client.database(DATABASE_NAME);
+            db.collection::<Document>(COLLECTION_CUSTOMER).drop(None).await.expect("cant delete customers");
+            db.collection::<Document>(COLLECTION_PETS).drop(None).await.expect("cant delete pets");
+        });
     }
 
     //CRUD: Customer++
