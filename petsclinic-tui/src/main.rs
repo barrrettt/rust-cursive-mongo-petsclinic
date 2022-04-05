@@ -1,42 +1,40 @@
 mod views;
-use petsclinic_lib::DataBase;
+mod settings;
 
+use petsclinic_lib::DataBase;
 use cursive::{Cursive, CursiveExt};
+use settings::{App,AppSettings};
 use views::menubar::create_menu_bar;
 
+//MAIN
 fn main() {
-    
-
-    //tests database
-    let database = match connect_database(){
-        Some(d) => d,
-        None => {
-            println!("No connect to database!");
-            return
-        },
-    };
-
-    
-    find_name_print(&database);
-    //reset_database(&database);
-
     //launch TUI
-    launch_tui();
-
+    launch_tui(); 
 }
 
 fn launch_tui(){
     //new cursive TUI
     let mut siv = Cursive::new();
+
+    //add user data
+    siv.set_user_data(
+    App{
+        settings: AppSettings{database_url: "mongodb://admin:admin@localhost:27017".to_string(),},
+        database:None,
+    });
+
+    //'q' is global quit
     siv.add_global_callback('q', |s| s.quit());
     
-    //menubar
+    //create menubar
     create_menu_bar(&mut siv);
     
     //run
     siv.run();
 }
 
+
+// cosas de database
 fn connect_database()->Option<DataBase>{
     println!("Connecting to mongodb...");
     match DataBase::connect(){
@@ -50,7 +48,7 @@ fn connect_database()->Option<DataBase>{
     }
 }
 
-fn reset_database(database:&DataBase){
+fn _reset_database(database:&DataBase){
      //delete all
      println!("Deleting collecions...");
      database.delete_database();
@@ -60,7 +58,7 @@ fn reset_database(database:&DataBase){
      database.create_db_mocks();
 }
 
-fn find_name_print(database:&DataBase){
+fn _find_name_print(database:&DataBase){
     //find by name
     let result = database.find_like_name("Javier");
     if let Some(customers) = result{
