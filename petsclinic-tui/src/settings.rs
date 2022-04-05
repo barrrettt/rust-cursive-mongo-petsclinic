@@ -18,6 +18,7 @@ impl Display for App {
 #[derive(Debug)]
 pub struct AppSettings{
     pub database_url: String,
+    pub database_url_default: String,
 }
 impl Display for AppSettings {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

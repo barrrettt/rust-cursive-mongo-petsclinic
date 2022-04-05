@@ -2,7 +2,7 @@ mod views;
 mod settings;
 
 use petsclinic_lib::DataBase;
-use cursive::{Cursive, CursiveExt};
+use cursive::{Cursive, CursiveExt, event};
 use settings::{App,AppSettings};
 use views::menubar::create_menu_bar;
 
@@ -19,12 +19,15 @@ fn launch_tui(){
     //add user data
     siv.set_user_data(
     App{
-        settings: AppSettings{database_url: "mongodb://admin:admin@localhost:27017".to_string(),},
+        settings: AppSettings{
+            database_url: "mongodb://admin:admin@localhost:27017".to_string(),
+            database_url_default: "mongodb://admin:admin@localhost:27017".to_string(),
+        },
         database:None,
     });
 
     //'q' is global quit
-    siv.add_global_callback('q', |s| s.quit());
+    siv.add_global_callback(event::Key::Esc, |s| s.quit());
     
     //create menubar
     create_menu_bar(&mut siv);
