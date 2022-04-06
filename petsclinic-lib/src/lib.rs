@@ -15,7 +15,7 @@ use crate::datamodels::{
 
 
 //consts
-const DEFAULT_URL:&str = "mongodb://admin:admin@localhost:27017";
+//const DEFAULT_URL:&str = "mongodb://admin:admin@localhost:27017";
 const DATABASE_NAME:&str = "pet_clinic";
 const COLLECTION_CUSTOMER:&str = "customers";
 const COLLECTION_PETS:&str = "pets";
@@ -28,14 +28,14 @@ pub struct DataBase {
 
 impl DataBase{
     //TOKIO MAIN
-    pub fn connect() -> Result<Option<DataBase>, mongodb::error::Error> {
+    pub fn connect(mongo_url:&str) -> Result<Option<DataBase>, mongodb::error::Error> {
         
         //tokio runtime
         let runtime = tokio::runtime::Runtime::new().unwrap();
         
         //get client to connect with mongodb
         let client_result = runtime.block_on(async {
-            let client_uri = DEFAULT_URL;
+            let client_uri = mongo_url;
             let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare()).await?;
             let client = match Client::with_options(options) {
                 Ok(it) => it,
@@ -245,6 +245,5 @@ impl DataBase{
         });
         result
     }
-
 
 }

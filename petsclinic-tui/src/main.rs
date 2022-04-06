@@ -4,7 +4,7 @@ mod settings;
 use petsclinic_lib::DataBase;
 use cursive::{Cursive, CursiveExt, event};
 use settings::{App,AppSettings};
-use views::menubar::create_menu_bar;
+use views::{form_connect_settings::show_connection_dialog, menubar::create_menu_bar};
 
 //MAIN
 fn main() {
@@ -15,19 +15,25 @@ fn main() {
 fn launch_tui(){
     //new cursive TUI
     let mut siv = Cursive::new();
+    siv.set_window_title("PET CLINIC");
 
     //add user data
     siv.set_user_data(
     App{
         settings: AppSettings{
-            database_url: "mongodb://admin:admin@localhost:27017".to_string(),
-            database_url_default: "mongodb://admin:admin@localhost:27017".to_string(),
+            db_user: "admin".to_string(),
+            db_pass:"admin".to_string(),
+            db_url:"localhost".to_string(),
+            db_port:"27017".to_string(),
         },
         database:None,
     });
 
     //'q' is global quit
     siv.add_global_callback(event::Key::Esc, |s| s.quit());
+    
+    //show connection pane
+    show_connection_dialog(&mut siv);
     
     //create menubar
     create_menu_bar(&mut siv);
@@ -38,14 +44,14 @@ fn launch_tui(){
 
 
 // cosas de database
-fn connect_database()->Option<DataBase>{
-    println!("Connecting to mongodb...");
-    match DataBase::connect(){
+fn connect_database(mongo_url:&str)->Option<DataBase>{
+    //println!("Connecting to mongodb...");
+    match DataBase::connect(mongo_url){
         Ok(database)=>{
             database
         }
-        Err(e)=>{
-            println!("Error when connecting to mongodb! {}",e);
+        Err(_)=>{
+            //println!("Error when connecting to mongodb! {}",e);
             None
         },
     }

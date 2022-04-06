@@ -1,6 +1,6 @@
 use cursive::{menu, views::Dialog, Cursive};
 
-use super::form_connect_settings::show_dialog_settings;
+use super::form_connect_settings::show_connection_dialog;
 
 
 //MENU BAR
@@ -13,7 +13,9 @@ pub(crate) fn create_menu_bar(siv: &mut Cursive){
             menu::Tree::new()
                 //DATABASE
                 .leaf("Connection", |s| { 
-                    show_dialog_settings(s);
+                    show_connection_dialog(s);
+                    s.set_autohide_menu(true);
+
                 })
                 //------
                 .delimiter()
@@ -36,8 +38,8 @@ pub(crate) fn create_menu_bar(siv: &mut Cursive){
         )
     ;//END
 
-    // ALLWAIS VISIBLE 
-    siv.set_autohide_menu(false);
+    //visible?
+    //siv.set_autohide_menu(false);    
 }
 
 
