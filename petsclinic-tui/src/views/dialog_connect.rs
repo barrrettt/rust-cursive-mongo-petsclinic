@@ -2,33 +2,33 @@ use std::thread;
 
 use cursive::{
     Cursive, 
-    views::{Dialog, EditView, LinearLayout, TextView}, 
+    views::{Dialog, EditView, TextView, ListView}, 
     traits::{Resizable, Nameable}
 };
 use petsclinic_lib::DataBase;
 
-use crate::{settings::App, connect_database};
+use crate::{settings::App, connect_database, show_all};
 
 //show dialog with text views and edit text and button to connect
-pub fn show_connection_dialog(siv: &mut Cursive){
+pub fn show(siv: &mut Cursive){
 
     // app user data
     let app = siv.user_data::<App>().unwrap();
 
     //dialog
-    let dialog = Dialog::around(
-        LinearLayout::vertical()
-            .child(TextView::new("Current mongo url connection:"))
-            .child(EditView::new().content(&app.settings.db_user).with_name("edit_user"))
-            .child(EditView::new().content(&app.settings.db_pass).with_name("edit_pass"))
-            .child(EditView::new().content(&app.settings.db_url).with_name("edit_url"))
-            .child(EditView::new().content(&app.settings.db_port).with_name("edit_port"))
-            .fixed_width(50),
-    )
-    .button("Default",on_default)
-    .button("Connect",|s|{
-        on_connect(s);
-    });
+    let dialog = Dialog::new()
+        .title("MONGO DB CONNECTION")
+        .content(ListView::new()
+            .child("User",EditView::new().content(&app.settings.db_user).with_name("edit_user"))
+            .child("Pass",EditView::new().content(&app.settings.db_pass).with_name("edit_pass"))
+            .child("Url ",EditView::new().content(&app.settings.db_url).with_name("edit_url"))
+            .child("Port",EditView::new().content(&app.settings.db_port).with_name("edit_port"))
+            .fixed_width(50)
+        )
+        .button("Default",on_default)
+        .button("Connect",|s|{
+            on_connect(s);
+        });
 
     //dialog
     siv.add_layer(dialog);
@@ -78,7 +78,6 @@ fn on_connect(siv: &mut Cursive) {
 //check result
 fn try_done(s: &mut Cursive, result: Option<DataBase>){
     
-
     //database to user data
     let app = s.user_data::<App>().unwrap();    
     app.database = result;
@@ -87,7 +86,7 @@ fn try_done(s: &mut Cursive, result: Option<DataBase>){
     match &app.database {
         Some(_d) => {
             s.pop_layer();
-            s.set_autohide_menu(false);
+            show_all(s);
             s.add_layer(Dialog::info("OK"));
         }
         None => {s.add_layer(Dialog::info("FAIL")); }

@@ -4,7 +4,7 @@ mod settings;
 use petsclinic_lib::DataBase;
 use cursive::{Cursive, CursiveExt, event};
 use settings::{App,AppSettings};
-use views::{form_connect_settings::show_connection_dialog, menubar::create_menu_bar};
+use views::{dialog_connect, menubar, list_customers, };
 
 //MAIN
 fn main() {
@@ -17,7 +17,7 @@ fn launch_tui(){
     let mut siv = Cursive::new();
     siv.set_window_title("PET CLINIC");
 
-    //add user data
+    //initial user data
     siv.set_user_data(
     App{
         settings: AppSettings{
@@ -29,19 +29,23 @@ fn launch_tui(){
         database:None,
     });
 
-    //'q' is global quit
+    //'Esc' is global quit
     siv.add_global_callback(event::Key::Esc, |s| s.quit());
     
     //show connection pane
-    show_connection_dialog(&mut siv);
+    dialog_connect::show(&mut siv);
     
     //create menubar
-    create_menu_bar(&mut siv);
+    menubar::show(&mut siv);
     
     //run
     siv.run();
 }
 
+fn show_all(siv: &mut Cursive){
+    siv.set_autohide_menu(false);
+    list_customers::show(siv);
+}
 
 // cosas de database
 fn connect_database(mongo_url:&str)->Option<DataBase>{
