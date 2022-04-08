@@ -111,7 +111,7 @@ impl DataBase{
     pub fn create_db_mocks(&self){
         self.runtime.block_on(async {
             //10000 customers and randomn pets (1-2)
-            let instances = 100000;
+            let instances = 250000;
             let countname = instances*3;
             let names = util::get_random_personames(countname);
             let mut iter = names.iter();
