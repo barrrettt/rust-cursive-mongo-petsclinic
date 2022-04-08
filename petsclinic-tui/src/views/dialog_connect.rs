@@ -93,11 +93,10 @@ fn try_done(s: &mut Cursive, result: Option<DataBase>){
         Some(_d) => {
             s.pop_layer();
             show_all(s);
-            s.add_layer(Dialog::info("OK"));
         }
         None => {
             s.pop_layer();
-            s.add_layer(Dialog::info("FAIL"));
+            s.add_layer(Dialog::info("ERROR ON CONNECTION"));
         }
     };
 }

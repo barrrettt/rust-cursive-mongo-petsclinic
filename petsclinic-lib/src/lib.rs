@@ -155,8 +155,8 @@ impl DataBase{
         result
     }
 
-    //CRUD: customers
-    pub fn find_like_name(&self, name:&str) -> Option<Vec<Customer>> {
+    //customers
+    pub fn find_customers_like_name(&self, name:&str) -> Option<Vec<Customer>> {
         let result = self.runtime.block_on(async {
             //get collection
             let db = self.client.database(DATABASE_NAME);
@@ -189,7 +189,7 @@ impl DataBase{
     }
 
     //CRUD customer 
-    pub fn find_customer_by_id(&self, id:&ObjectId) -> Option<Customer> {
+    pub fn get_customer_by_id(&self, id:&ObjectId) -> Option<Customer> {
         let result = self.runtime.block_on(async {
             //get collection
             let db = self.client.database(DATABASE_NAME);

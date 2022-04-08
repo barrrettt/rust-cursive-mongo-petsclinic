@@ -67,8 +67,8 @@ fn show_all(siv: &mut Cursive){
 }
 
 fn _find_name_print(database:&DataBase){
-    //find by name
-    let result = database.find_like_name("Javier");
+    //find by name example
+    let result = database.find_customers_like_name("Javier");
     if let Some(customers) = result{
         println!("Find by name result:");
         for customer in customers{

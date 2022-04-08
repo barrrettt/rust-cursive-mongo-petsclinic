@@ -42,7 +42,7 @@ pub fn poblate_list(siv: &mut Cursive, query: &str) {
     //user data, database and find by name
     let app = siv.user_data::<App>().unwrap();
     let database = app.database.as_ref().unwrap();
-    let search_result = database.find_like_name(query);
+    let search_result = database.find_customers_like_name(query);
 
     //get selectview and add results
     siv.call_on_name("selectview_customers", |selectview: &mut SelectView| {
