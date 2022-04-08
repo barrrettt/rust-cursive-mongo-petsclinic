@@ -111,7 +111,7 @@ impl DataBase{
     pub fn create_db_mocks(&self){
         self.runtime.block_on(async {
             //10000 customers and randomn pets (1-2)
-            let instances = 10000;
+            let instances = 100000;
             let countname = instances*3;
             let names = util::get_random_personames(countname);
             let mut iter = names.iter();
@@ -164,14 +164,16 @@ impl DataBase{
 
             // Query the customers in the collection with a filter to find with like.
             let regex = bson::Regex{pattern:name.to_owned(), options:"".to_owned()};
-            let filter = doc! {"name":regex};
-            let options = FindOptions::builder().limit(100).build();
+            let filter = doc!{"name":regex};
+            //options
+            let sort = doc!{"name":1};
+            let options = FindOptions::builder().limit(50).sort(sort).build();
             
             //execute query
             if let Result::Ok(mut cursor) = customers.find(filter, options).await{
 
                 let mut customers: Vec<Customer> = Vec::new();
-
+                
                 while let Result::Ok(Some(doc)) = cursor.try_next().await{
                     if let Result::Ok(customer) = from_document(doc){
                         //println!("Doc {:?}",customer);

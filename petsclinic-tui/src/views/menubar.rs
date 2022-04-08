@@ -30,6 +30,7 @@ pub(crate) fn show(siv: &mut Cursive){
             "Database",
             menu::Tree::new()
                 .leaf("Create mocks", move |s| { 
+                    s.pop_layer();
                     //Mocks
                     let app = s.user_data::<App>().unwrap();
                     let database = app.database.as_ref().unwrap();
