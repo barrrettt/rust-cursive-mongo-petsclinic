@@ -40,6 +40,7 @@ pub(crate) fn show(siv: &mut Cursive){
                 })
 
                 .leaf("Delete all", move |s| { 
+                    s.pop_layer();
                     //delete all
                     let app = s.user_data::<App>().unwrap();
                     let database = app.database.as_ref().unwrap();
