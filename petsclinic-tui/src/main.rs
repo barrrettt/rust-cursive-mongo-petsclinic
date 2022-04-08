@@ -2,22 +2,24 @@ mod views;
 mod settings;
 
 use petsclinic_lib::DataBase;
-use cursive::{Cursive, CursiveExt, event};
+use cursive::{Cursive, CursiveExt, event, views::LinearLayout};
 use settings::{App,AppSettings};
-use views::{dialog_connect, menubar, list_customers, };
+use views::{dialog_connect, menubar, list_customers, detail_customer, };
 
-//MAIN
-fn main() {
-    //launch TUI
+//MAIN 
+fn main() { 
+
+    //launch TUI 
     launch_tui(); 
-}
+
+    //helpers
+    //_reset_data();
+    //_create_mocks();
+} 
 
 fn launch_tui(){
     //new cursive TUI
     let mut siv = Cursive::new();
-    siv.set_window_title("PET CLINIC");
-
-    //initial user data
     siv.set_user_data(
     App{
         settings: AppSettings{
@@ -28,6 +30,9 @@ fn launch_tui(){
         },
         database:None,
     });
+    
+    //title
+    siv.set_window_title("PET CLINIC");
 
     //'Esc' is global quit
     siv.add_global_callback(event::Key::Esc, |s| s.quit());
@@ -43,32 +48,22 @@ fn launch_tui(){
 }
 
 fn show_all(siv: &mut Cursive){
+    //menu visible
     siv.set_autohide_menu(false);
-    list_customers::show(siv);
-}
 
-// cosas de database
-fn connect_database(mongo_url:&str)->Option<DataBase>{
-    //println!("Connecting to mongodb...");
-    match DataBase::connect(mongo_url){
-        Ok(database)=>{
-            database
-        }
-        Err(_)=>{
-            //println!("Error when connecting to mongodb! {}",e);
-            None
-        },
-    }
-}
+    //main view
+    let panel_main = LinearLayout::horizontal()
+    .child(list_customers::new())
+    .child(detail_customer::new(siv))
+    //.child(list_pets::new(siv))
+    //.child(detail_pet::new(siv))
+    ;
+    
+    //add layer
+    siv.add_layer(panel_main);
 
-fn _reset_database(database:&DataBase){
-     //delete all
-     println!("Deleting collecions...");
-     database.delete_database();
- 
-     //repoblate
-     println!("Creating mocks..");
-     database.create_db_mocks();
+    //poblate all customers
+    list_customers::poblate_list(siv,"");
 }
 
 fn _find_name_print(database:&DataBase){
@@ -84,3 +79,19 @@ fn _find_name_print(database:&DataBase){
     }
 }
 
+
+//UTILS
+fn _reset_data(){
+    //to settings
+    match DataBase::connect("mongodb://admin:admin@localhost:27017") {
+        Ok(r) => r.unwrap().delete_database(),
+        Err(_) => (),
+    }
+}
+
+fn _create_mocks(){
+    match DataBase::connect("mongodb://admin:admin@localhost:27017") {
+        Ok(r) => r.unwrap().create_db_mocks(),
+        Err(_) => (),
+    }
+}

@@ -1,11 +1,12 @@
-mod datamodels;
+pub mod datamodels;
 mod util;
+
 use tokio;
 use bson::{Document, doc, Bson, oid::ObjectId, from_document};
 use chrono::Utc;
-use futures::TryStreamExt;
+use futures::{TryStreamExt};
 use mongodb::{
-    options::{ResolverConfig, ClientOptions,}, 
+    options::{ResolverConfig, ClientOptions, FindOptions}, 
     Client
 };
 use crate::datamodels::{
@@ -13,8 +14,6 @@ use crate::datamodels::{
     pet::Pet
 };
 
-
-//consts
 //const DEFAULT_URL:&str = "mongodb://admin:admin@localhost:27017";
 const DATABASE_NAME:&str = "pet_clinic";
 const COLLECTION_CUSTOMER:&str = "customers";
@@ -47,14 +46,18 @@ impl DataBase{
         match client_result {
             Ok(client) => {
                 let database = DataBase {runtime, client};
+                let mut create_new = false;
                 //if empty insert some data
                 database.runtime.block_on(async {
-                    let exist = database.ckeck_databases().await;
-                    if !exist {
+                    let ckeck_ok = database.ckeck_databases().await;
+                    if !ckeck_ok {
                         println!("New database...");
-                        database.create_db_mocks();
+                        create_new = true;
                     }
                 });
+                if create_new{
+                    database.create_database();
+                }
                 return Ok(Some(database));
             },
             Err(e) => Err(e),
@@ -69,7 +72,7 @@ impl DataBase{
             Ok(values)=>{
                 let mut exists = false;
                 for name in values{
-                    //println!("- {}", name);
+                    println!("- {}", name);
                     if name.eq(DATABASE_NAME) {
                         exists = true;
                     }
@@ -84,8 +87,8 @@ impl DataBase{
         db_pet_clinic_exists
     }
 
-    //new Database with mocks
-    pub fn create_db_mocks(&self){
+    //new Database with minimal mocks
+    pub fn create_database(&self){
         self.runtime.block_on(async {
             let owner = self.add_customer_with_name("Javier Fernández Barreiro").await;
             let owner = match owner{
@@ -96,18 +99,30 @@ impl DataBase{
             self.add_pet_by_name_and_owner("Jazz",&owner).await;
             self.add_pet_by_name_and_owner("Ned",&owner).await;
 
-            let owner = self.add_customer_with_name("Isiña Garcia Novais").await;
+            let owner = self.add_customer_with_name("Isiña García Novais").await;
             let owner = owner.unwrap();
             self.add_pet_by_name_and_owner("Xena",&owner).await;
             self.add_pet_by_name_and_owner("Mut",&owner).await;
             self.add_pet_by_name_and_owner("Vlad",&owner).await;
+        });
+    }
 
+    //new Database with mocks
+    pub fn create_db_mocks(&self){
+        self.runtime.block_on(async {
             //10000 customers and randomn pets (1-2)
-            for _i in 0..10000 {
-                let name = util::get_random_personame();
-                if let Some(ow) = self.add_customer_with_name(name).await{
-                    self.add_pet_by_name_and_owner(util::get_random_personame(),&ow).await;
-                    self.add_pet_by_name_and_owner(util::get_random_personame(),&ow).await;
+            let instances = 10000;
+            let countname = instances*3;
+            let names = util::get_random_personames(countname);
+            let mut iter = names.iter();
+            
+            for _i in 0..instances {
+                let name = iter.next().unwrap();
+                let pet1name = iter.next().unwrap();
+                let pet2name = iter.next().unwrap();
+                if let Some(o) = self.add_customer_with_name(&name).await{
+                    self.add_pet_by_name_and_owner(&pet1name,&o).await;
+                    self.add_pet_by_name_and_owner(&pet2name,&o).await;
                 }
             }
         });
@@ -121,6 +136,78 @@ impl DataBase{
             db.collection::<Document>(COLLECTION_CUSTOMER).drop(None).await.expect("cant delete customers");
             db.collection::<Document>(COLLECTION_PETS).drop(None).await.expect("cant delete pets");
         });
+    }
+
+    //Count customers
+    pub fn count_customers(&self) -> u64 {
+        let result = self.runtime.block_on(async {
+            //get collection
+            let db = self.client.database(DATABASE_NAME);
+            let customers = db.collection::<Document>(COLLECTION_CUSTOMER);
+            //execute query
+            if let Ok(some) = customers.estimated_document_count(None).await {
+                some
+            }else{
+                0
+            }
+           
+        });
+        result
+    }
+
+    //CRUD: customers
+    pub fn find_like_name(&self, name:&str) -> Option<Vec<Customer>> {
+        let result = self.runtime.block_on(async {
+            //get collection
+            let db = self.client.database(DATABASE_NAME);
+            let customers = db.collection::<Document>(COLLECTION_CUSTOMER);
+
+            // Query the customers in the collection with a filter to find with like.
+            let regex = bson::Regex{pattern:name.to_owned(), options:"".to_owned()};
+            let filter = doc! {"name":regex};
+            let options = FindOptions::builder().limit(100).build();
+            
+            //execute query
+            if let Result::Ok(mut cursor) = customers.find(filter, options).await{
+
+                let mut customers: Vec<Customer> = Vec::new();
+
+                while let Result::Ok(Some(doc)) = cursor.try_next().await{
+                    if let Result::Ok(customer) = from_document(doc){
+                        //println!("Doc {:?}",customer);
+                        customers.push(customer)
+                    }
+                }
+                return Some(customers);//results
+            }
+            //bad finally
+            None
+        });
+        result
+    }
+
+    //CRUD customer 
+    pub fn find_customer_by_id(&self, id:&ObjectId) -> Option<Customer> {
+        let result = self.runtime.block_on(async {
+            //get collection
+            let db = self.client.database(DATABASE_NAME);
+            let customers = db.collection::<Document>(COLLECTION_CUSTOMER);
+
+            // Query the customers in the collection with a filter to find with like.
+            let filter = doc! {"_id":id};
+            let options = None;
+            //execute query
+            if let Ok(some) = customers.find_one(filter, options).await {
+                if let Some(d) = some{
+                    //deserialize
+                    if let Ok(c) = bson::from_bson(Bson::Document(d)) {
+                        return Some(c)
+                    }
+                }
+            };
+            None
+        });
+        result
     }
 
     //CRUD: Customer++
@@ -189,61 +276,6 @@ impl DataBase{
             };
         }
         None
-    }
-
-    //CRUD: customers
-    pub fn find_like_name(&self, name:&str) -> Option<Vec<Customer>> {
-        let result = self.runtime.block_on(async {
-            //get collection
-            let db = self.client.database(DATABASE_NAME);
-            let customers = db.collection::<Document>(COLLECTION_CUSTOMER);
-
-            // Query the customers in the collection with a filter to find with like.
-            let regex = bson::Regex{pattern:name.to_owned(), options:"".to_owned()};
-            let filter = doc! {"name":regex};
-            let options = None;
-            
-            //execute query
-            if let Result::Ok(mut cursor) = customers.find(filter, options).await{
-
-                let mut customers: Vec<Customer> = Vec::new();
-
-                while let Result::Ok(Some(doc)) = cursor.try_next().await{
-                    if let Result::Ok(customer) = from_document(doc){
-                        //println!("Doc {:?}",customer);
-                        customers.push(customer)
-                    }
-                }
-                return Some(customers);//results
-            }
-            //bad finally
-            None
-        });
-        result
-    }
-
-    // CRUD customer 
-    pub fn find_customer_by_id(&self, id:&ObjectId) -> Option<Customer> {
-        let result = self.runtime.block_on(async {
-            //get collection
-            let db = self.client.database(DATABASE_NAME);
-            let customers = db.collection::<Document>(COLLECTION_CUSTOMER);
-
-            // Query the customers in the collection with a filter to find with like.
-            let filter = doc! {"_id":id};
-            let options = None;
-            //execute query
-            if let Ok(some) = customers.find_one(filter, options).await {
-                if let Some(d) = some{
-                    //deserialize
-                    if let Ok(c) = bson::from_bson(Bson::Document(d)) {
-                        return Some(c)
-                    }
-                }
-            };
-            None
-        });
-        result
     }
 
 }
