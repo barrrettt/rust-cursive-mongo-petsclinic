@@ -1,5 +1,7 @@
 use cursive::{menu, views::Dialog, Cursive};
 
+use crate::{settings::App, show_all};
+
 use super::dialog_connect;
 
 
@@ -22,6 +24,28 @@ pub(crate) fn show(siv: &mut Cursive){
                 //QUIT
                 .leaf("Quit", |s| s.quit()
             )
+        )
+    //DDL
+        .add_subtree(
+            "Database",
+            menu::Tree::new()
+                .leaf("Create mocks", move |s| { 
+                    //Mocks
+                    let app = s.user_data::<App>().unwrap();
+                    let database = app.database.as_ref().unwrap();
+                    database.create_db_mocks();
+                    show_all(s);
+                    s.add_layer(Dialog::info("Mocks created!"));
+                })
+
+                .leaf("Delete all", move |s| { 
+                    //delete all
+                    let app = s.user_data::<App>().unwrap();
+                    let database = app.database.as_ref().unwrap();
+                    database.delete_database();
+                    show_all(s);
+                    s.add_layer(Dialog::info("Deleted collections!"));
+                })
         )
 
     //HELP

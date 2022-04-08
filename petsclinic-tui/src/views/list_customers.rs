@@ -1,24 +1,69 @@
 
-use cursive::{Cursive, views::{LinearLayout, Panel, Button}, traits::Resizable, XY};
+use cursive::{
+    Cursive, views::{LinearLayout, Panel, EditView, SelectView, ResizedView, Dialog}, 
+    traits::{Resizable, Nameable, Scrollable}, 
+    align::HAlign,
+};
+use crate::settings::App;
+//use petsclinic_lib::datamodels::customer::Customer;
 
-use crate::{settings::App};
+// show panel 
+pub fn new() -> ResizedView<Panel<LinearLayout>> {
 
-//show panel
-pub fn show(siv: &mut Cursive){
+    //editview 
+    let editview = EditView::new()
+    .on_edit(on_edit)
+    .on_submit(on_submit)
+    .fixed_width(30)
+    .with_name("query");
 
-    // app user data
-    let app = siv.user_data::<App>().unwrap();
+    //select view
+    let selectview: SelectView<String> = SelectView::new().h_align(HAlign::Center);
+    //add name and scroll to selectview
+    let scroll_selection = selectview
+        .with_name("selectview_customers")
+        .scrollable();
 
-    // panel
-    let panel = 
-    LinearLayout::vertical()
-        .child(
-            Panel::new(Button::new("Quit", |s| s.quit()))
-                .title("Customers")
-                //.fixed_width(40)
-                .fixed_size( XY::new(40, 10)),
-        );
-
-    //dialog
-    siv.add_layer(panel);
+    //panel 
+    let panel = Panel::new(
+        LinearLayout::vertical()
+        // edit view 
+        .child(editview)
+        //lines results
+        .child(scroll_selection)
+    )
+    //Title and sizes
+    .min_size((30, 10));
+    
+    panel
 }
+
+pub fn poblate_list(siv: &mut Cursive, query: &str) {
+    //user data, database and find by name
+    let app = siv.user_data::<App>().unwrap();
+    let database = app.database.as_ref().unwrap();
+    let search_result = database.find_like_name(query);
+
+    //get selectview and add results
+    siv.call_on_name("selectview_customers", |selectview: &mut SelectView| {
+        selectview.clear();
+         //poblate
+        if let Some(customers) = search_result{
+            for customer in customers{
+                let label = customer.name;
+                let id = customer.id.unwrap().to_hex();
+                selectview.add_item(label,id);
+            }
+        }
+    });
+}
+
+// Update results according to the query
+fn on_edit(siv: &mut Cursive, query: &str, _cursor: usize) {
+    poblate_list(siv,query);
+}
+
+fn on_submit(siv: &mut Cursive, query: &str) {
+    siv.add_layer(Dialog::info(format!("Query {}",query.to_string())));
+}
+

@@ -7,7 +7,7 @@ use cursive::{
 };
 use petsclinic_lib::DataBase;
 
-use crate::{settings::App, connect_database, show_all};
+use crate::{settings::App,show_all};
 
 //show dialog with text views and edit text and button to connect
 pub fn show(siv: &mut Cursive){
@@ -68,10 +68,16 @@ fn on_connect(siv: &mut Cursive) {
     //try connect to mongodb
     let cb = siv.cb_sink().clone();
     thread::spawn(move || {
-        let result = connect_database(&str_mongo_url);
-        cb.send(Box::new(|s|{
-            try_done(s,result);
-        })).unwrap();
+        if let Ok(result) = DataBase::connect(&str_mongo_url) {
+            cb.send(Box::new(|s|{
+                try_done(s,result);
+            })).unwrap();
+
+        }else{
+            cb.send(Box::new(|s|{
+                s.pop_layer();
+            })).unwrap();
+        }
     });
 }
 
@@ -89,6 +95,9 @@ fn try_done(s: &mut Cursive, result: Option<DataBase>){
             show_all(s);
             s.add_layer(Dialog::info("OK"));
         }
-        None => {s.add_layer(Dialog::info("FAIL")); }
+        None => {
+            s.pop_layer();
+            s.add_layer(Dialog::info("FAIL"));
+        }
     };
 }
