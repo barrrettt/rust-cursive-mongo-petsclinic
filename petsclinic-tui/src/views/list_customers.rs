@@ -5,24 +5,26 @@ use cursive::{
     align::HAlign,
 };
 use crate::settings::App;
-//use petsclinic_lib::datamodels::customer::Customer;
+
+use super::detail_customer::update_customer;
 
 // show panel 
 pub fn new() -> ResizedView<Panel<LinearLayout>> {
 
-    //editview 
+    //EDITVIEW FOR SEARCHS
     let editview = EditView::new()
     .on_edit(on_edit)
-    .on_submit(on_submit)
     .fixed_width(30)
     .with_name("query");
 
-    //select view
-    let selectview: SelectView<String> = SelectView::new().h_align(HAlign::Center);
+    //SELECT VIEW FOR SELECT CUSTOMERS
+    let selectview: SelectView<String> = SelectView::new()
+    .on_submit(on_submit)
+    .h_align(HAlign::Center);
     //add name and scroll to selectview
     let scroll_selection = selectview
-        .with_name("selectview_customers")
-        .scrollable();
+    .with_name("selectview_customers")
+    .scrollable();
 
     //panel 
     let panel = Panel::new(
@@ -60,10 +62,12 @@ pub fn poblate_list(siv: &mut Cursive, query: &str) {
 
 // Update results according to the query
 fn on_edit(siv: &mut Cursive, query: &str, _cursor: usize) {
+    //siv.add_layer(Dialog::info(format!("Query {}",query.to_string())));
     poblate_list(siv,query);
 }
 
-fn on_submit(siv: &mut Cursive, query: &str) {
-    siv.add_layer(Dialog::info(format!("Query {}",query.to_string())));
+fn on_submit(siv: &mut Cursive, id: &str) {
+    //siv.add_layer(Dialog::info(format!("SUmmit ID {}",id.to_string())));
+    update_customer(siv, id);
 }
 
