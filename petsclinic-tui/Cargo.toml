@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 petsclinic-lib = { path = "../petsclinic-lib" }
 cursive = "0.17" #Text user interface
+mongodb = "2.1.0"
