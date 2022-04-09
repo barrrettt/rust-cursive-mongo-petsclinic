@@ -54,9 +54,9 @@ fn show_all(siv: &mut Cursive){
     //main view
     let panel_main = LinearLayout::horizontal()
     .child(list_customers::new())
-    .child(detail_customer::new(siv))
-    //.child(list_pets::new(siv))
-    //.child(detail_pet::new(siv))
+    .child(detail_customer::new())
+    //.child(list_pets::new())
+    //.child(detail_pet::new())
     ;
     
     //add layer
