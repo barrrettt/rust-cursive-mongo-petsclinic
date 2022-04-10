@@ -12,4 +12,5 @@ bson = { version = "2", features = ["chrono-0_4"] } # Needed for using chrono da
 tokio = "1"
 chrono = "0.4" # Used for setting DateTimes
 serde = "1" # Used in the Map Data into Structs section
-rand = "0.8.4"
+rand = "0.8.4" #random
+lipsum = "0.8" #to generate random lorem texts

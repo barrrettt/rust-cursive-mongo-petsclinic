@@ -1,9 +1,10 @@
 
 use cursive::{
-    Cursive, views::{LinearLayout, Panel, EditView, SelectView, ResizedView, Dialog}, 
+    Cursive, views::{LinearLayout, Panel, EditView, SelectView, ResizedView},
     traits::{Resizable, Nameable, Scrollable}, 
     align::HAlign,
 };
+
 use crate::settings::App;
 
 use super::detail_customer::update_customer;

@@ -90,37 +90,70 @@ impl DataBase{
     //new Database with minimal mocks
     pub fn create_database(&self){
         self.runtime.block_on(async {
-            let owner = self.add_customer_with_name("Javier Fernández Barreiro").await;
-            let owner = match owner{
-                Some(o) => o,
-                None => return,
+            //2 new customers and few pets
+            let customer = Customer{
+                id:None,
+                name:"Javier Fernández Barreiro".to_owned(),
+                note:"No note".to_owned(),
+                contact:vec![],
+                update_time:Utc::now(),
             };
-            self.add_pet_by_name_and_owner("Lua",&owner).await;
-            self.add_pet_by_name_and_owner("Jazz",&owner).await;
-            self.add_pet_by_name_and_owner("Ned",&owner).await;
 
-            let owner = self.add_customer_with_name("Isiña García Novais").await;
-            let owner = owner.unwrap();
-            self.add_pet_by_name_and_owner("Xena",&owner).await;
-            self.add_pet_by_name_and_owner("Mut",&owner).await;
-            self.add_pet_by_name_and_owner("Vlad",&owner).await;
+            if let Some(owner) = self.add_customer(customer).await{
+                self.add_pet_by_name_and_owner("Lua",&owner).await;
+                self.add_pet_by_name_and_owner("Jazz",&owner).await;
+                self.add_pet_by_name_and_owner("Ned",&owner).await;
+            }
+            
+            let customer = Customer{
+                id:None,
+                name:"Isiña García Novais".to_owned(),
+                note:"No note".to_owned(),
+                contact:vec![],
+                update_time:Utc::now(),
+            };
+            
+            if let Some(owner) = self.add_customer(customer).await{
+                self.add_pet_by_name_and_owner("Xena",&owner).await;
+                self.add_pet_by_name_and_owner("Mut",&owner).await;
+                self.add_pet_by_name_and_owner("Vlad",&owner).await;
+            }            
         });
     }
 
     //new Database with mocks
     pub fn create_db_mocks(&self){
         self.runtime.block_on(async {
-            //10000 customers and randomn pets (1-2)
+            //n customers
             let instances = 25000;
-            let countname = instances*3;
-            let names = util::get_random_personames(countname);
-            let mut iter = names.iter();
-            
+            let names = util::get_random_personames(instances);
+            let mut iter_names = names.iter();
+
+            //n*2 pets
+            let pet_names = util::get_random_petname(instances*2);
+            let mut iter_pet_names = pet_names.iter();
+
+            //notes
+            let notes = util::get_random_note(instances);
+
+            //n creations
             for _i in 0..instances {
-                let name = iter.next().unwrap();
-                let pet1name = iter.next().unwrap();
-                let pet2name = iter.next().unwrap();
-                if let Some(o) = self.add_customer_with_name(&name).await{
+                let name = iter_names.next().unwrap();
+                let note = iter_names.next().unwrap();
+                let pet1name = iter_pet_names.next().unwrap();
+                let pet2name = iter_pet_names.next().unwrap();
+
+                //new customer
+                let mut customer = Customer{
+                    id:None,
+                    name:name.to_owned(),
+                    note:note.to_owned(),
+                    contact:vec![],
+                    update_time:Utc::now(),
+                };
+
+                //2 pets
+                if let Some(o) = self.add_customer(customer).await{
                     self.add_pet_by_name_and_owner(&pet1name,&o).await;
                     self.add_pet_by_name_and_owner(&pet2name,&o).await;
                 }
@@ -213,21 +246,12 @@ impl DataBase{
     }
 
     //CRUD: Customer++
-    async fn add_customer_with_name(&self, customer_name: &str) -> Option<Customer> {
+    async fn add_customer(&self, mut customer: Customer) -> Option<Customer> {
         let db = self.client.database(DATABASE_NAME);
         let customers = db.collection::<Document>(COLLECTION_CUSTOMER);
         
-        //new object
-        let mut instance = Customer{
-            id:None,
-            name:customer_name.to_owned(),
-            note:"".to_owned(),
-            contact:vec![],
-            update_time:Utc::now(),
-        };
-
         // Convert struct to document
-        if let Ok(bson) = bson::to_bson(&instance) {
+        if let Ok(bson) = bson::to_bson(&customer) {
             let document = bson.as_document().unwrap();
             //inset
             match customers.insert_one(document, None).await {
@@ -237,8 +261,8 @@ impl DataBase{
                 }
                 Ok(inserted) =>{
                     //println!("+customer:{}",instance.name);
-                    instance.id = inserted.inserted_id.as_object_id();
-                    return Some(instance)
+                    customer.id = inserted.inserted_id.as_object_id();
+                    return Some(customer)
                 },
             };
         };

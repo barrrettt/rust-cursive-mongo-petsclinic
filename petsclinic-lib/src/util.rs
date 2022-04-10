@@ -1,4 +1,5 @@
 use rand::{seq::SliceRandom, Rng};
+use lipsum::lipsum;
 
 pub(crate) fn get_random_personames(amount_names:i128) -> Vec<String> {
 
@@ -41,7 +42,6 @@ pub(crate) fn get_random_personames(amount_names:i128) -> Vec<String> {
 }
 
 pub(crate) fn get_random_petname(amount_names:i128) -> Vec<String> {
-
     let mut rng = rand::thread_rng();
 
     //read resource files
@@ -54,6 +54,19 @@ pub(crate) fn get_random_petname(amount_names:i128) -> Vec<String> {
     for _i in 0..amount_names{
         let petname = names.choose(&mut rng).unwrap();
         result.push(petname.to_string());
+    }
+    //result
+    result
+}
+
+pub(crate) fn get_random_note(aount_notes:i128)-> Vec<String> {
+    let mut rng = rand::thread_rng();
+    let mut result = Vec::new();
+    //exec n times
+    for _i in 0..aount_notes{
+        let lenght = rand::thread_rng().gen_range(0..100);
+        let lorem = lipsum(lenght);
+        result.push(lorem);
     }
     //result
     result
