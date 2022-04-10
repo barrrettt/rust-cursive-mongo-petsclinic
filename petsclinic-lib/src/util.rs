@@ -30,10 +30,30 @@ pub(crate) fn get_random_personames(amount_names:i128) -> Vec<String> {
         }else{
             name = names_female.choose(&mut rng).unwrap();
         }
-        let surname = surnames.choose(&mut rng).unwrap();
+        let surname1 = surnames.choose(&mut rng).unwrap();
+        let surname2 = surnames.choose(&mut rng).unwrap();
 
-        let names = format!("{} {}",name,surname);
+        let names = format!("{} {} {}",name,surname1,surname2);
         result.push(names);
+    }
+    //result
+    result
+}
+
+pub(crate) fn get_random_petname(amount_names:i128) -> Vec<String> {
+
+    let mut rng = rand::thread_rng();
+
+    //read resource files
+    let mut names = Vec::new();
+    for line in include_str!("res/pet_names.txt").lines(){
+        names.push(line.to_ascii_lowercase());
+    }
+    let mut result = Vec::new();
+    //exec n times
+    for _i in 0..amount_names{
+        let petname = names.choose(&mut rng).unwrap();
+        result.push(petname.to_string());
     }
     //result
     result
