@@ -9,6 +9,7 @@ use mongodb::{
     options::{ResolverConfig, ClientOptions, FindOptions}, 
     Client
 };
+use util::create_mocks;
 use crate::datamodels::{
     customer::Customer,
     pet::Pet
@@ -90,7 +91,7 @@ impl DataBase{
     //new Database with minimal mocks
     pub fn create_database(&self){
         self.runtime.block_on(async {
-            //2 new customers and few pets
+            //2 new customers and pets
             let customer = Customer{
                 id:None,
                 name:"Javier Fernández Barreiro".to_owned(),
@@ -100,9 +101,16 @@ impl DataBase{
             };
 
             if let Some(owner) = self.add_customer(customer).await{
-                self.add_pet_by_name_and_owner("Lua",&owner).await;
-                self.add_pet_by_name_and_owner("Jazz",&owner).await;
-                self.add_pet_by_name_and_owner("Ned",&owner).await;
+                //new pets
+                let pet = Pet{
+                    id:None,
+                    customer_id:owner.id,
+                    name:"Lua".to_owned(),
+                    note:"".to_owned(),
+                    pet_type:"cat".to_owned(),
+                    update_time:Utc::now(),
+                };
+                self.add_pet(pet).await;
             }
             
             let customer = Customer{
@@ -114,52 +122,22 @@ impl DataBase{
             };
             
             if let Some(owner) = self.add_customer(customer).await{
-                self.add_pet_by_name_and_owner("Xena",&owner).await;
-                self.add_pet_by_name_and_owner("Mut",&owner).await;
-                self.add_pet_by_name_and_owner("Vlad",&owner).await;
+                let pet = Pet{
+                    id:None,
+                    customer_id:owner.id,
+                    name:"Xena".to_owned(),
+                    note:"".to_owned(),
+                    pet_type:"cat".to_owned(),
+                    update_time:Utc::now(),
+                };
+                self.add_pet(pet).await;
             }            
         });
     }
 
     //new Database with mocks
     pub fn create_db_mocks(&self){
-        self.runtime.block_on(async {
-            //n customers
-            let instances = 25000;
-            let names = util::get_random_personames(instances);
-            let mut iter_names = names.iter();
-
-            //n*2 pets
-            let pet_names = util::get_random_petname(instances*2);
-            let mut iter_pet_names = pet_names.iter();
-
-            //notes
-            let notes = util::get_random_note(instances);
-            let mut iter_notes = notes.iter();
-
-            //n creations
-            for _i in 0..instances {
-                let name = iter_names.next().unwrap();
-                let note = iter_notes.next().unwrap();
-                let pet1name = iter_pet_names.next().unwrap();
-                let pet2name = iter_pet_names.next().unwrap();
-
-                //new customer
-                let customer = Customer{
-                    id:None,
-                    name:name.to_owned(),
-                    note:note.to_owned(),
-                    contact:vec![],
-                    update_time:Utc::now(),
-                };
-
-                //2 pets
-                if let Some(o) = self.add_customer(customer).await{
-                    self.add_pet_by_name_and_owner(&pet1name,&o).await;
-                    self.add_pet_by_name_and_owner(&pet2name,&o).await;
-                }
-            }
-        });
+        create_mocks(&self,10000);
     }
 
     //delete db
@@ -271,22 +249,12 @@ impl DataBase{
     }
 
     //CRUD: Pet++
-    async fn add_pet_by_name_and_owner(&self, pet_name:&str, customer_owner:&Customer) -> Option<Pet> {
+    async fn add_pet(&self, mut pet: Pet) -> Option<Pet> {
         let db = self.client.database(DATABASE_NAME);
         let pets = db.collection::<Document>(COLLECTION_PETS);
         
-        //new object
-        let mut instance = Pet{
-            id:None,
-            customer_id:customer_owner.id,
-            name:pet_name.to_owned(),
-            note:"".to_owned(),
-            pet_type:"cat".to_owned(),
-            update_time:Utc::now(),
-        };
-        
         // Convert struct to document
-        let serialized = bson::to_bson(&instance);
+        let serialized = bson::to_bson(&pet);
         if let Ok(bson) = serialized {
             let document = bson.as_document().unwrap();
             //inset
@@ -297,8 +265,8 @@ impl DataBase{
                 }
                 Ok(inserted) =>{
                     //println!("+pet:{}",instance.name);
-                    instance.id = inserted.inserted_id.as_object_id();
-                    return Some(instance)
+                    pet.id = inserted.inserted_id.as_object_id();
+                    return Some(pet)
                 },
             };
         }

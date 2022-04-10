@@ -1,7 +1,10 @@
+use chrono::Utc;
 use rand::{seq::SliceRandom, Rng};
 use lipsum::lipsum;
 
-pub(crate) fn get_random_personames(amount_names:i128) -> Vec<String> {
+use crate::datamodels::{customer::Customer, pet::Pet};
+
+fn get_random_personames(amount_names:i128) -> Vec<String> {
 
     let mut rng = rand::thread_rng();
 
@@ -41,7 +44,7 @@ pub(crate) fn get_random_personames(amount_names:i128) -> Vec<String> {
     result
 }
 
-pub(crate) fn get_random_petname(amount_names:i128) -> Vec<String> {
+fn get_random_petname(amount_names:i128) -> Vec<String> {
     let mut rng = rand::thread_rng();
 
     //read resource files
@@ -59,14 +62,70 @@ pub(crate) fn get_random_petname(amount_names:i128) -> Vec<String> {
     result
 }
 
-pub(crate) fn get_random_note(aount_notes:i128)-> Vec<String> {
+fn get_random_note(aount_notes:i128)-> Vec<String> {
     let mut result = Vec::new();
     //exec n times
     for _i in 0..aount_notes{
-        let lenght = rand::thread_rng().gen_range(0..100);
+        let lenght = rand::thread_rng().gen_range(0..10);
         let lorem = lipsum(lenght);
         result.push(lorem);
     }
     //result
     result
+}
+
+pub(crate) fn create_mocks(db: &crate::DataBase, instances: i128){
+    db.runtime.block_on(async {
+        //n customers
+        let names = get_random_personames(instances);
+        let mut iter_names = names.iter();
+
+        //n*2 pets
+        let pet_names = get_random_petname(instances*2);
+        let mut iter_pet_names = pet_names.iter();
+
+        //notes
+        let notes = get_random_note(instances);
+        let mut iter_notes = notes.iter();
+
+        //n creations
+        for _i in 0..instances {
+            let name = iter_names.next().unwrap();
+            let note = iter_notes.next().unwrap();
+            let pet1name = iter_pet_names.next().unwrap();
+            let pet2name = iter_pet_names.next().unwrap();
+
+            //new customer
+            let customer = Customer{
+                id:None,
+                name:name.to_owned(),
+                note:note.to_owned(),
+                contact:vec![],
+                update_time:Utc::now(),
+            };
+
+            //2 pets
+            if let Some(owner) = db.add_customer(customer).await{
+                let pet = Pet{
+                    id:None,
+                    customer_id:owner.id,
+                    name:pet1name.to_owned(),
+                    note:"".to_owned(),
+                    pet_type:"cat".to_owned(),
+                    update_time:Utc::now(),
+                };
+                db.add_pet(pet).await;
+
+                let pet = Pet{
+                    id:None,
+                    customer_id:owner.id,
+                    name:pet2name.to_owned(),
+                    note:"".to_owned(),
+                    pet_type:"cat".to_owned(),
+                    update_time:Utc::now(),
+                };
+                db.add_pet(pet).await;
+            }
+        }
+    });
 }
