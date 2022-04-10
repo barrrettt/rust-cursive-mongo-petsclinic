@@ -13,4 +13,4 @@ tokio = "1"
 chrono = "0.4" # Used for setting DateTimes
 serde = "1" # Used in the Map Data into Structs section
 rand = "0.8.4" #random
-lipsum = "0.8" #to generate random lorem texts
+fake = "2.4" # For generating fake data.

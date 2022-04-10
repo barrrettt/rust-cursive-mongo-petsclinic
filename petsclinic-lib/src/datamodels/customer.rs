@@ -25,4 +25,5 @@ pub struct Address{
     pub line1:String,
     pub line2:String,
     pub line3:String,
+    pub line4:String,
 }

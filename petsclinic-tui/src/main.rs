@@ -8,13 +8,16 @@ use views::{dialog_connect, menubar, list_customers, detail_customer, };
 
 //MAIN 
 fn main() { 
-
+    // this method needs to be inside main() method
+    //env::set_var("RUST_BACKTRACE", "1");
+    
     //launch TUI 
     launch_tui();
 
     //helpers
     //_reset_data();
     //_create_mocks();
+    //_find_name_print();
 } 
 
 fn launch_tui(){
@@ -66,18 +69,6 @@ fn show_all(siv: &mut Cursive){
     list_customers::poblate_list(siv,"");
 }
 
-fn _find_name_print(database:&DataBase){
-    //find by name example
-    let result = database.find_customers_like_name("Javier");
-    if let Some(customers) = result{
-        println!("Find by name result:");
-        for customer in customers{
-            println!("C:{:?}-{:?}",customer.name,customer.id);
-        }
-    }else{
-        println!("result {:?}",result.expect("Error"));
-    }
-}
 
 //UTILS
 fn _reset_data(){
@@ -92,5 +83,26 @@ fn _create_mocks(){
     match DataBase::connect("mongodb://admin:admin@localhost:27017") {
         Ok(r) => r.unwrap().create_db_mocks(),
         Err(_) => (),
+    }
+}
+
+fn _find_name_print(){
+    let database = match DataBase::connect("mongodb://admin:admin@localhost:27017") {
+        Ok(r) => r.unwrap(),
+        Err(_) => return,
+    };
+    //find by name example
+    let result = database.find_customers_like_name_sort_list("av");
+    if let Some(r) = result{
+        // println!("Find by name result:");
+        let (customers,count) = r;
+        let mut size = 0;
+        for customer in customers{
+            println!("C:{:?}-{:?}",customer.name,customer.id);
+            size+=1;
+        }
+        println!("Count list: {} of total:{}",size, count);
+    }else{
+        println!("result {:?}",result.expect("Error"));
     }
 }

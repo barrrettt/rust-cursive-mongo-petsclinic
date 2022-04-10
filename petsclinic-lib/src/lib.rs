@@ -1,10 +1,12 @@
 pub mod datamodels;
 mod util;
 
+//use std::time::Duration;
+
 use tokio;
 use bson::{Document, doc, Bson, oid::ObjectId, from_document};
 use chrono::Utc;
-use futures::{TryStreamExt};
+use futures::TryStreamExt;
 use mongodb::{
     options::{ResolverConfig, ClientOptions, FindOptions}, 
     Client
@@ -168,7 +170,7 @@ impl DataBase{
     }
 
     //customers
-    pub fn find_customers_like_name(&self, name:&str) -> Option<Vec<Customer>> {
+    pub fn find_customers_like_name_sort_list(&self, name:&str) -> Option<(Vec<Customer>, u64)>   {
         let result = self.runtime.block_on(async {
             //get collection
             let db = self.client.database(DATABASE_NAME);
@@ -179,20 +181,28 @@ impl DataBase{
             let filter = doc!{"name":regex};
             //options
             let sort = doc!{"name":1};
-            let options = FindOptions::builder().limit(50).sort(sort).build();
+            let options = FindOptions::builder()
+            //.max_await_time(Duration::from_millis(128))        
+            .limit(1000)
+            .sort(sort).build();
             
             //execute query
             if let Result::Ok(mut cursor) = customers.find(filter, options).await{
 
-                let mut customers: Vec<Customer> = Vec::new();
+                let mut customers_found: Vec<Customer> = Vec::new();
                 
                 while let Result::Ok(Some(doc)) = cursor.try_next().await{
                     if let Result::Ok(customer) = from_document(doc){
                         //println!("Doc {:?}",customer);
-                        customers.push(customer)
+                        customers_found.push(customer)
                     }
                 }
-                return Some(customers);//results
+
+                //count all 
+                if let Ok(count) = customers.estimated_document_count(None).await{
+                    //result OK
+                    return Some((customers_found,count));
+                }
             }
             //bad finally
             None
