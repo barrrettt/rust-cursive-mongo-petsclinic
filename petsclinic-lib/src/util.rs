@@ -60,7 +60,6 @@ pub(crate) fn get_random_petname(amount_names:i128) -> Vec<String> {
 }
 
 pub(crate) fn get_random_note(aount_notes:i128)-> Vec<String> {
-    let mut rng = rand::thread_rng();
     let mut result = Vec::new();
     //exec n times
     for _i in 0..aount_notes{

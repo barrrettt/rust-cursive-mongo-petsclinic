@@ -10,7 +10,7 @@ use views::{dialog_connect, menubar, list_customers, detail_customer, };
 fn main() { 
 
     //launch TUI 
-    launch_tui(); 
+    launch_tui();
 
     //helpers
     //_reset_data();
@@ -78,7 +78,6 @@ fn _find_name_print(database:&DataBase){
         println!("result {:?}",result.expect("Error"));
     }
 }
-
 
 //UTILS
 fn _reset_data(){

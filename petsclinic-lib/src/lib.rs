@@ -135,16 +135,17 @@ impl DataBase{
 
             //notes
             let notes = util::get_random_note(instances);
+            let mut iter_notes = notes.iter();
 
             //n creations
             for _i in 0..instances {
                 let name = iter_names.next().unwrap();
-                let note = iter_names.next().unwrap();
+                let note = iter_notes.next().unwrap();
                 let pet1name = iter_pet_names.next().unwrap();
                 let pet2name = iter_pet_names.next().unwrap();
 
                 //new customer
-                let mut customer = Customer{
+                let customer = Customer{
                     id:None,
                     name:name.to_owned(),
                     note:note.to_owned(),
